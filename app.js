@@ -1,7 +1,9 @@
-const request = require('request');
+
 const yargs = require('yargs');
 
-const googleApiKey = 'AIzaSyAXor0x9xSEwP-ju9o7YOdxuGX9yPl6X7E';
+const geocode = require('./geocode/geocode.js');
+const weather = require('./weather/weather.js');
+
 const argv = yargs
   .options({
     a: {
@@ -14,13 +16,18 @@ const argv = yargs
   .help()
   .alias('help', 'h')
   .argv;
-var encodedAddress = encodeURIComponent(argv.address);
 
-request({
-  url: `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${googleApiKey}`,
-  json: true
-}, (error, response, body) => {
-  console.log(`Address: ${body.results[0].formatted_address}`);
-  console.log(`Lat: ${body.results[0].geometry.location.lat}`);
-  console.log(`Lng: ${body.results[0].geometry.location.lng}`);
+geocode.geocodeAddress(argv.address, (errorMessage, results) => {
+  if (errorMessage) {
+    console.log(errorMessage);
+  } else {
+    console.log(results.address);
+    weather.getWeather(results.latitude, results.longitude, (errorMessage, weatherResults) => {
+      if (errorMessage) {
+        console.log(errorMessage);
+      } else {
+        console.log(`It's currently ${weatherResults.temperature} 'C. It feels like ${weatherResults.apparentTemperature} 'C`);
+      }
+    });
+  }
 });
